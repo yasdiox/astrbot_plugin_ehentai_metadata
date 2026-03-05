@@ -2,7 +2,7 @@ import json
 import datetime
 import time
 from pathlib import Path
-from astrbot import logger
+from astrbot.api import logger
 import urllib.parse
 import httpx
 from typing import Tuple, Dict, Any
@@ -181,10 +181,10 @@ class metadata:
 
     @staticmethod
     async def ensure_db(proxy: str | None = None, force_update: bool = False) -> None:
-        """确保 resource 下存在最新的 db.html.json（或 db.text.json 作为回退）。
+        """确保 resource 下存在最新的 db.text.json
 
-        - 若文件不存在或已超过 24 小时（或 force_update=True），则从 RELEASES 下载最新 db.html.json。
-        - 下载成功后保存为 `db.html.json`。
+        - 若文件不存在或已超过 24 小时（或 force_update=True），则从 RELEASES 下载最新 db.text.json。
+        - 下载成功后保存为 `db.text.json`。
         """
 
         target = DB_TEXT

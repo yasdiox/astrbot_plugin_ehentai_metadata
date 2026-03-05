@@ -38,7 +38,7 @@ class MyPlugin(Star):
             logger.warning("无法在后台启动翻译数据库更新任务")
 
     @filter.regex(PATTERN.pattern)
-    async def metadata(self, event: AstrMessageEvent):
+    async def ehentai_metadata(self, event: AstrMessageEvent):
         match = PATTERN.search(event.message_str or "")
         if not match:
             return
