@@ -6,6 +6,12 @@
 
 </div>
 
+<div align="center">
+  
+![:MoeCounter](https://count.getloli.com/@astrbot_plugin_ehentai_metadata?name=astrbot_plugin_ehentai_metadata&theme=moebooru&padding=7&offset=0&align=center&scale=1&pixelated=1&darkmode=auto)
+
+</div>
+
 ---
 
 ## 📌 项目简介
