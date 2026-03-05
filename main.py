@@ -1,24 +1,92 @@
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
-from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
+from astrbot.api.event import filter, AstrMessageEvent
+from astrbot.api.event import filter, AstrMessageEvent
+from astrbot.api.star import Context, Star
+from astrbot.api import logger, AstrBotConfig
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
+from pathlib import Path
+import re
+from textwrap import dedent
+
+from .data_source import metadata
+from ..astrbot_plugin_htmlrender.htmlrender import template_to_pic
+
+PATTERN = re.compile(r"https://(?:e-hentai|exhentai)\.org/g/(?P<id>\d+)/(?P<code>[A-Za-z0-9]+)/?")
+
+
 class MyPlugin(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
 
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+    def get_proxy(self):
+        proxy_config = self.config.get('network_proxy', {})
+        mode = proxy_config.get('proxy_mode', 'system')
+        if mode == 'system':
+            return None  # httpx 默认使用系统代理
+        elif mode == 'custom':
+            url = proxy_config.get('proxy_url', '')
+            return url if url else None
+        return None
 
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
-    async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        user_name = event.get_sender_name()
-        message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
-        logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+    # 获取最新译文数据库
+    async def initialize(self): 
+        try:
+            import asyncio
+            proxy = self.get_proxy()
+            asyncio.create_task(metadata.ensure_db(proxy=proxy))
+        except Exception:
+            logger.warning("无法在后台启动翻译数据库更新任务")
 
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+    @filter.regex(PATTERN.pattern)
+    async def metadata(self, event: AstrMessageEvent):
+        match = PATTERN.search(event.message_str or "")
+        if not match:
+            return
+
+        gid = int(match.group("id"))
+        code = match.group("code")
+
+        proxy = self.get_proxy()
+        data, tags_dict = await metadata.get_metadata(gid, code, proxy=proxy)
+        if not data:
+            return
+
+        clip_text = dedent(
+            f"""
+            ├──────────────────────────────────────────────
+
+            ◈ 标题    ┃ {data.get('标题') or '(无)'}
+            ◈ 日标    ┃ {data.get('日文标题') or '(无)'}
+
+            ├──────────────────────────────────────────────
+
+            ◈ 时间    ┃ {data.get('时间')}
+            ◈ 类型    ┃ {data.get('类型')}
+            ◈ 页数    ┃ {data.get('页数')}
+            ◈ 评分    ┃ {data.get('评分')}
+
+            ├──────────────────────────────────────────────
+
+            ◈ 磁链    ┃ {data.get('磁链')}
+            ◈ 标识    ┃ {data.get('gid')} / {data.get('token')}
+
+            ├──────────────────────────────────────────────
+            """
+        ).strip()
+
+        qr_api_url = await metadata.create_hastebin_clipboard(clip_text, proxy=proxy)
+
+        template_path = Path(__file__).parent / "resource"
+        template_name = "text.html"
+        pic = await template_to_pic(
+            template_path=str(template_path),
+            template_name=template_name,
+            templates={"data": data, "tag": tags_dict, "url": qr_api_url},
+            pages={
+                "viewport": {"width": 850, "height": 300},
+                "base_url": template_path.as_uri(),
+            },
+        )
+
+        logger.info("图片已生成: %s", pic)
+        yield event.image_result(pic)

@@ -1,0 +1,25 @@
+{
+  "network_proxy": {
+    "description": "网络与代理",
+    "type": "object",
+    "hint": "用于访问 e-hentai.org ，建议在无法访问时启用",
+    "items": {
+      "proxy_mode": {
+        "description": "代理模式",
+        "type": "string",
+        "default": "system",
+        "options": [
+          "system",
+          "custom"
+        ],
+        "hint": "system=使用系统环境变量，custom=使用下方代理地址"
+      },
+      "proxy_url": {
+        "description": "自定义代理地址",
+        "type": "string",
+        "default": "",
+        "hint": "示例：http://127.0.0.1:7890 或 socks5://127.0.0.1:7890（仅 proxy_mode=custom 生效）"
+      }
+    }
+  }
+}

@@ -1,0 +1,176 @@
+<style>
+    body {
+        margin: 0;
+    }
+
+    .container {
+        display: flex;
+        background-color: #1F1F1F;
+        color: #ffffff;
+        padding: 20px;
+    }
+
+    #cover {
+        flex: 1;
+        margin-right: 20px;
+    }
+
+    #cover img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    #info-block {
+    flex: 2;
+    position: relative; /* 关键：启用定位上下文 */
+    }
+
+
+    #qrcode-container {
+    float: right;              /* 关键：让文字环绕（但要保证在 DOM 中先于需要环绕的文本） */
+    margin: 6px 0 0 10px;      /* 适当间距 */
+    background-color: #fff;
+    padding: 6px;
+    border-radius: 6px;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+    }
+
+
+    #qrcode {
+        width: 50px;
+        height: 50px;
+    }
+
+    .tag {
+    display: inline-block;   /* 改成 inline-block，让每个 tag 可独立换行 */
+    line-height: 1.42857143;
+    font-family: Noto Sans, sans-serif;
+    color: #d9d9d9;
+    font-weight: 700;
+    margin: .13em;
+    vertical-align: middle;  /* 可选，视觉对齐 */
+    }
+
+    .name {
+        font-size: 1em;
+        color: #d9d9d9;
+        display: flex;
+        padding: .13em .39em;
+        border-radius: .3em;
+        align-items: center;
+        font-weight: 700;
+        background: #595959;
+    }
+
+    .title_jpn {
+        margin: 0;
+        font-size: 1.2em;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 0.8em;
+        color: #BBB5AC;
+    }
+
+    #rating {
+        font-family: arial, helvetica, sans-serif;
+        --csstools-color-scheme--light: initial;
+        color-scheme: light;
+        color: #5C0D11;
+        text-align: justify;
+        width: 170px;
+        margin: 17px auto 0;
+        padding-left: 25px;
+        font-size: 9pt;
+    }
+
+    table {
+        line-height: 1.42857143;
+        font-family: Noto Sans, sans-serif;
+        color: #d9d9d9;
+        font-weight: 700;
+        display: inline-flex;
+        margin: .13em;
+        text-align: center;
+    }
+    #rating_image {
+        font-family: arial,helvetica,sans-serif;
+        --csstools-color-scheme--light: initial;
+        color-scheme: light;
+        color: #5C0D11;
+        font-size: 9pt;
+        text-align: center;
+        font-weight: bold;
+        width: 80px;
+        height: 16px;
+        background-repeat: no-repeat;
+        background-image: url(https://ehgt.org/g/rt.png);
+        cursor: pointer;
+        background-position: 0px -1px;
+    }
+    
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let rating = {{ data['评分'] }};
+        const integerPart = Math.floor(rating);
+        const decimalPart = rating - integerPart;
+        const formattedDecimal = decimalPart < 0.25 ? 0 : decimalPart < 0.75 ? 0.5 : 1; 
+        rating = integerPart + formattedDecimal; // 格式化分数
+        const x = Number.isInteger(rating) ? -8 * Math.floor((5 - rating) * 2) : -8 * (Math.floor((5 - rating) * 2)-1); //计算x坐标
+        const y = Number.isInteger(rating) ? -1 : -21; //计算y坐标
+
+
+        document.getElementById('rating_image').style.backgroundPosition = `${x}px ${y}px`;
+    });
+</script>
+
+<div class="container">
+    <div id="cover">
+        <img src="{{ data['图片'] }}">
+        <div id="rating">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>评分：</td>
+                        <td>
+                            <div id="rating_image"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">平均值: {{ data['评分'] }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="info-block">
+        <div id="qrcode-container">
+            <img id="qrcode" src="{{ url }}" alt="QR Code">
+        </div>
+    
+        <h1 class="title_jpn">{{ data['日文标题'] }}</h1>
+        <h3 class="title">{{ data['标题'] }}</h3>
+    
+        <br>
+        <a class="tag">{{ data['时间'] }}</a>
+        <br>
+        <br>
+        页数: <a class="tag"><span class="name">{{ data['页数'] }}</span></a><br>
+        类型: <a class="tag"><span class="name">{{ data['类型'] }}</span></a><br>
+        {% for type, values in tag.items() %}
+        {{ type }}:
+        <span class="tags">
+            {% for value in values %}
+            <a class="tag"><span class="name">{{ value }}</span></a>
+            {% endfor %}
+        </span>
+        <br>
+        {% endfor %}
+    </div>
+    
+</div>
