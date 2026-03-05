@@ -24,7 +24,7 @@
 
 ## 🔍 效果演示：
 
-![alt text](A.png)
+![alt text](assets/A.png)
 
 ---
 
